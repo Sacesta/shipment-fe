@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layout, Menu } from 'antd';
+import { Layout, Menu, Avatar, Typography, Dropdown, Space } from 'antd';
 import {
   DashboardOutlined,
   ShoppingOutlined,
@@ -7,31 +7,79 @@ import {
   CarOutlined,
   SettingOutlined,
   QuestionCircleOutlined,
-  ExclamationCircleOutlined
+  ExclamationCircleOutlined,
+  UserOutlined,
+  LogoutOutlined,
+  BellOutlined,
+  SearchOutlined
 } from '@ant-design/icons';
 
 
 
-const { Sider, Content } = Layout;
+
+const { Sider, Content, Header } = Layout;
+const { Text } = Typography;
+
 
 const AppLayout = ({ children, currentPage, onPageChange, collapsed, onCollapse }) => {
+  const userMenuItems = [
+    {
+      key: 'profile',
+      icon: <UserOutlined />,
+      label: 'Profile',
+    },
+    {
+      key: 'settings',
+      icon: <SettingOutlined />,
+      label: 'Settings',
+    },
+    {
+      type: 'divider',
+    },
+    {
+      key: 'logout',
+      icon: <LogoutOutlined />,
+      label: 'Logout',
+      danger: true,
+    },
+  ];
+
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Sider collapsible collapsed={collapsed} onCollapse={onCollapse} theme="light">
-        <div className="p-4 flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+      <Sider 
+        collapsible 
+        collapsed={collapsed} 
+        onCollapse={onCollapse} 
+        theme="light"
+        width={250}
+        style={{
+          boxShadow: '2px 0 8px rgba(0,0,0,0.1)',
+        }}
+      >
+        <div style={{ padding: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <Avatar 
+            size="large" 
+            style={{ 
+              backgroundColor: '#1890ff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
             3PL
-          </div>
+          </Avatar>
           {!collapsed && (
             <div>
-              <div className="font-semibold">3PL Logistics</div>
-              <div className="text-xs text-gray-500">Shiprocket POC</div>
+              <Text strong style={{ display: 'block', fontSize: '16px' }}>3PL Logistics</Text>
+              <Text type="secondary" style={{ fontSize: '12px' }}>Shiprocket POC</Text>
             </div>
           )}
         </div>
+
         <Menu
           mode="inline"
           selectedKeys={[currentPage]}
+          style={{ border: 'none' }}
           items={[
             {
               key: 'dashboard',
@@ -62,7 +110,6 @@ const AppLayout = ({ children, currentPage, onPageChange, collapsed, onCollapse 
               icon: <ShoppingOutlined />,
               label: 'Orders'
             },
-
             {
               type: 'divider'
             },
@@ -78,13 +125,46 @@ const AppLayout = ({ children, currentPage, onPageChange, collapsed, onCollapse 
             }
           ]}
         />
-
       </Sider>
       <Layout>
-        <Content style={{ background: '#f0f2f5' }}>
+        <Header 
+          style={{ 
+            background: '#fff', 
+            padding: '0 24px',
+            boxShadow: '0 1px 4px rgba(0,21,41,0.08)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}
+        >
+          <div style={{ flex: 1, maxWidth: 400 }}>
+            {/* Search placeholder for future implementation */}
+          </div>
+          <Space size="middle">
+            <BellOutlined style={{ fontSize: '16px', color: '#595959', cursor: 'pointer' }} />
+            <Dropdown
+              menu={{
+                items: userMenuItems,
+              }}
+              placement="bottomRight"
+              arrow
+            >
+              <Space style={{ cursor: 'pointer' }}>
+                <Avatar size="small" icon={<UserOutlined />} />
+                <Text>Admin User</Text>
+              </Space>
+            </Dropdown>
+          </Space>
+        </Header>
+        <Content style={{ 
+          background: '#f0f2f5', 
+          padding: '24px',
+          minHeight: 'calc(100vh - 64px)'
+        }}>
           {children}
         </Content>
       </Layout>
+
     </Layout>
   );
 };

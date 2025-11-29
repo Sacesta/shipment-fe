@@ -1,136 +1,198 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { 
+  Card, 
+  Table, 
+  Tag, 
+  Button, 
+  Space, 
+  Typography,
+  Row,
+  Col,
+  Input,
+  Select,
+  message
+} from 'antd';
+import { 
+  FilterOutlined, 
+  SwapOutlined,
+  EyeOutlined
+} from '@ant-design/icons';
+
+
+const { Title, Text } = Typography;
+const { Search } = Input;
+const { Option } = Select;
 
 const ErrorsPage = () => {
-  return (
-    <main className="flex-1 overflow-y-auto p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* PageHeading Component */}
-        <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
-          <p className="text-gray-900 dark:text-white text-4xl font-black leading-tight tracking-[-0.033em]">API & Shipping Errors</p>
-        </div>
+  const [selectedFilter, setSelectedFilter] = useState('all');
+  const [searchText, setSearchText] = useState('');
+
+  const handleViewDetails = (record) => {
+    message.info(`Viewing details for: ${record.orderId}`);
+    // TODO: Implement detailed view functionality
+  };
+
+  const filterOptions = [
+    { value: 'all', label: 'All' },
+    { value: 'missing-weight', label: 'Missing Weight' },
+    { value: 'wrong-pincode', label: 'Wrong Pincode' },
+    { value: 'shiprocket-error', label: 'Shiprocket Error' },
+    { value: 'api-failure', label: 'API Failure' },
+  ];
+
         
-        {/* Main Container Card */}
-        <div className="bg-white dark:bg-gray-900/50 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800">
-          {/* Toolbar & Chips Component */}
-          <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex flex-col md:flex-row md:items-center gap-4">
-            <div className="flex-1 flex gap-2 overflow-x-auto pb-2">
-              <button className="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-primary text-white pl-4 pr-4">
-                <p className="text-sm font-medium leading-normal">All</p>
-              </button>
-              <button className="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 pl-4 pr-4">
-                <p className="text-sm font-medium leading-normal">Missing Weight</p>
-              </button>
-              <button className="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 pl-4 pr-4">
-                <p className="text-sm font-medium leading-normal">Wrong Pincode</p>
-              </button>
-              <button className="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 pl-4 pr-4">
-                <p className="text-sm font-medium leading-normal">Shiprocket Error</p>
-              </button>
-              <button className="flex h-9 shrink-0 items-center justify-center gap-x-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 pl-4 pr-4">
-                <p className="text-sm font-medium leading-normal">API Failure</p>
-              </button>
-            </div>
-            <div className="flex gap-2">
-              <button className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">
-                <span className="material-symbols-outlined">filter_list</span>
-              </button>
-              <button className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">
-                <span className="material-symbols-outlined">swap_vert</span>
-              </button>
-            </div>
-          </div>
-          
-          {/* Table Component */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-gray-200 dark:border-gray-800">
-                  <th className="px-6 py-4 text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Order ID</th>
-                  <th className="px-6 py-4 text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Details</th>
-                  <th className="px-6 py-4 text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Error</th>
-                  <th className="px-6 py-4 text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Timestamp</th>
-                  <th className="px-6 py-4 text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-                <tr className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <p className="text-sm font-medium text-gray-800 dark:text-gray-200">#OD786543</p>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <p className="text-sm text-gray-700 dark:text-gray-300">Anshuman Singh, New Delhi</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Shipment weight is required but not provided.</p>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="px-3 py-1 text-xs font-semibold leading-tight text-red-700 bg-red-100 rounded-full dark:bg-red-700/30 dark:text-red-300">Missing Weight</span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">2 min ago</p>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right">
-                    <button className="text-sm font-medium text-primary hover:underline">View Details</button>
-                  </td>
-                </tr>
-                <tr className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <p className="text-sm font-medium text-gray-800 dark:text-gray-200">#OD786512</p>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <p className="text-sm text-gray-700 dark:text-gray-300">Riya Sharma, Mumbai</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">The provided pincode 400001 is not serviceable.</p>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="px-3 py-1 text-xs font-semibold leading-tight text-red-700 bg-red-100 rounded-full dark:bg-red-700/30 dark:text-red-300">Invalid Pincode</span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">1 hour ago</p>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right">
-                    <button className="text-sm font-medium text-primary hover:underline">View Details</button>
-                  </td>
-                </tr>
-                <tr className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <p className="text-sm font-medium text-gray-800 dark:text-gray-200">#OD786499</p>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <p className="text-sm text-gray-700 dark:text-gray-300">Prakash Kumar, Bengaluru</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Courier partner API returned a 500 server error.</p>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="px-3 py-1 text-xs font-semibold leading-tight text-red-700 bg-red-100 rounded-full dark:bg-red-700/30 dark:text-red-300">Shiprocket Error</span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Yesterday</p>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right">
-                    <button className="text-sm font-medium text-primary hover:underline">View Details</button>
-                  </td>
-                </tr>
-                <tr className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <p className="text-sm font-medium text-gray-800 dark:text-gray-200">#OD786488</p>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <p className="text-sm text-gray-700 dark:text-gray-300">Meera Iyer, Chennai</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Authentication token expired. Please re-authenticate.</p>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="px-3 py-1 text-xs font-semibold leading-tight text-red-700 bg-red-100 rounded-full dark:bg-red-700/30 dark:text-red-300">API Failure</span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Oct 26, 2023</p>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right">
-                    <button className="text-sm font-medium text-primary hover:underline">View Details</button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+  const columns = [
+    {
+      title: 'Order ID',
+      dataIndex: 'orderId',
+      key: 'orderId',
+      width: 120,
+      render: (text) => <Text strong>{text}</Text>,
+    },
+    {
+      title: 'Details',
+      dataIndex: 'details',
+      key: 'details',
+      render: (_, record) => (
+        <div>
+          <Text strong>{record.customer}</Text>
+          <br />
+          <Text type="secondary" style={{ fontSize: '12px' }}>
+            {record.errorDescription}
+          </Text>
         </div>
-      </div>
-    </main>
+      ),
+    },
+    {
+      title: 'Error',
+      dataIndex: 'errorType',
+      key: 'errorType',
+      width: 150,
+      render: (errorType) => {
+        const colorMap = {
+          'Missing Weight': 'red',
+          'Invalid Pincode': 'orange',
+          'Shiprocket Error': 'volcano',
+          'API Failure': 'purple',
+        };
+        return <Tag color={colorMap[errorType] || 'default'}>{errorType}</Tag>;
+      },
+    },
+    {
+      title: 'Timestamp',
+      dataIndex: 'timestamp',
+      key: 'timestamp',
+      width: 120,
+      render: (text) => <Text type="secondary">{text}</Text>,
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
+      width: 100,
+      render: (_, record) => (
+        <Button 
+          type="link" 
+          icon={<EyeOutlined />}
+          onClick={() => handleViewDetails(record)}
+        >
+          View Details
+        </Button>
+      ),
+    },
+  ];
+
+  const data = [
+    {
+      key: '1',
+      orderId: '#OD786543',
+      customer: 'Anshuman Singh, New Delhi',
+      errorDescription: 'Shipment weight is required but not provided.',
+      errorType: 'Missing Weight',
+      timestamp: '2 min ago',
+    },
+    {
+      key: '2',
+      orderId: '#OD786512',
+      customer: 'Riya Sharma, Mumbai',
+      errorDescription: 'The provided pincode 400001 is not serviceable.',
+      errorType: 'Invalid Pincode',
+      timestamp: '1 hour ago',
+    },
+    {
+      key: '3',
+      orderId: '#OD786499',
+      customer: 'Prakash Kumar, Bengaluru',
+      errorDescription: 'Courier partner API returned a 500 server error.',
+      errorType: 'Shiprocket Error',
+      timestamp: 'Yesterday',
+    },
+    {
+      key: '4',
+      orderId: '#OD786488',
+      customer: 'Meera Iyer, Chennai',
+      errorDescription: 'Authentication token expired. Please re-authenticate.',
+      errorType: 'API Failure',
+      timestamp: 'Oct 26, 2023',
+    },
+  ];
+
+  return (
+    <div style={{ padding: '24px' }}>
+      <Row justify="space-between" align="middle" style={{ marginBottom: '24px' }}>
+        <Col>
+          <Title level={2} style={{ margin: 0 }}>API & Shipping Errors</Title>
+        </Col>
+      </Row>
+      
+      <Card>
+        <Row gutter={[16, 16]} style={{ marginBottom: '16px' }}>
+          <Col xs={24} sm={12} md={8}>
+            <Select
+              value={selectedFilter}
+              onChange={setSelectedFilter}
+              style={{ width: '100%' }}
+              placeholder="Filter by error type"
+            >
+              {filterOptions.map(option => (
+                <Option key={option.value} value={option.value}>
+                  {option.label}
+                </Option>
+              ))}
+            </Select>
+          </Col>
+          <Col xs={24} sm={12} md={8}>
+            <Search
+              placeholder="Search errors..."
+              allowClear
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              style={{ width: '100%' }}
+            />
+          </Col>
+          <Col xs={24} sm={24} md={8}>
+            <Space style={{ float: 'right' }}>
+              <Button icon={<FilterOutlined />}>Filter</Button>
+              <Button icon={<SwapOutlined />}>Sort</Button>
+            </Space>
+          </Col>
+        </Row>
+
+          
+        <Table
+          columns={columns}
+          dataSource={data}
+          pagination={{
+            pageSize: 10,
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total, range) => 
+              `Showing ${range[0]}-${range[1]} of ${total} items`
+          }}
+          scroll={{ x: 800 }}
+        />
+      </Card>
+    </div>
+
   );
 };
 
