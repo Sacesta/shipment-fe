@@ -7,10 +7,10 @@ export const authService = {
     try {
       const response = await api.post('/auth/login', credentials);
       
-      // Store token in localStorage
-      if (response.data.token) {
-        localStorage.setItem('authToken', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
+      // Store token in localStorage - fixed to match actual API response structure
+      if (response.data.data && response.data.data.token) {
+        localStorage.setItem('authToken', response.data.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.data));
       }
       
       return response.data;
@@ -53,8 +53,8 @@ export const authService = {
     try {
       const response = await api.post('/auth/refresh');
       
-      if (response.data.token) {
-        localStorage.setItem('authToken', response.data.token);
+      if (response.data.data && response.data.data.token) {
+        localStorage.setItem('authToken', response.data.data.token);
       }
       
       return response.data;
@@ -85,8 +85,8 @@ export const authService = {
       const response = await api.put('/auth/profile', profileData);
       
       // Update stored user data
-      if (response.data.user) {
-        localStorage.setItem('user', JSON.stringify(response.data.user));
+      if (response.data.data) {
+        localStorage.setItem('user', JSON.stringify(response.data.data));
       }
       
       return response.data;

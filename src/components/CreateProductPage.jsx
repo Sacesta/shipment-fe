@@ -1,205 +1,326 @@
 import React, { useState } from 'react';
+import { Form, Input, InputNumber, Button, Card, Typography, Space, Breadcrumb, message } from 'antd';
+import { 
+  TagOutlined, 
+  BarcodeOutlined, 
+   
+  InboxOutlined,
+  HomeOutlined,
+  AppstoreOutlined,
+  LoadingOutlined
+} from '@ant-design/icons';
 
-const CreateProductPage = ({ onBackToProducts }) => {
-  const [formData, setFormData] = useState({
+const { Title, Text } = Typography;
+
+// Mock product service for demo
+const productService = {
+  createProduct: async (data) => {
+    // Simulate API call
+    return new Promise((resolve) => {
+      setTimeout(() => resolve({ success: true }), 1000);
+    });
+  }
+};
+
+const CreateProductPage = ({ onBackToProducts = () => console.log('Back to products') }) => {
+  const [formValues, setFormValues] = useState({
     name: '',
     sku: '',
-    weight: '',
-    length: '',
-    width: '',
-    height: '',
-    stock: ''
+    weight: undefined,
+    length: undefined,
+    width: undefined,
+    height: undefined,
+    stock: undefined
   });
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
 
-  const handleInputChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!formValues.name || formValues.name.length < 3) {
+      newErrors.name = 'Product name must be at least 3 characters';
+    }
+    
+    if (!formValues.sku) {
+      newErrors.sku = 'Please enter SKU';
+    } else if (!/^[A-Z0-9-]+$/i.test(formValues.sku)) {
+      newErrors.sku = 'SKU should contain only letters, numbers, and hyphens';
+    }
+    
+    if (!formValues.weight || formValues.weight < 0.01) {
+      newErrors.weight = 'Weight must be greater than 0';
+    }
+    
+    if (!formValues.length || formValues.length < 0.1) {
+      newErrors.length = 'Length is required';
+    }
+    
+    if (!formValues.width || formValues.width < 0.1) {
+      newErrors.width = 'Width is required';
+    }
+    
+    if (!formValues.height || formValues.height < 0.1) {
+      newErrors.height = 'Height is required';
+    }
+    
+    if (formValues.stock === undefined || formValues.stock < 0) {
+      newErrors.stock = 'Stock level must be 0 or greater';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Handle form submission logic here
-    console.log('Product data:', formData);
-    // You can add API call or state management here
+  const handleSubmit = async () => {
+    if (!validateForm()) {
+      message.error('Please fix the form errors');
+      return;
+    }
+    
+    setLoading(true);
+    
+    try {
+      const productData = {
+        name: formValues.name,
+        sku: formValues.sku,
+        weight: formValues.weight,
+        dimensions: {
+          length: formValues.length,
+          width: formValues.width,
+          height: formValues.height
+        },
+        stock: formValues.stock
+      };
+
+      await productService.createProduct(productData);
+      
+      message.success('Product created successfully!');
+      
+      setFormValues({
+        name: '',
+        sku: '',
+        weight: undefined,
+        length: undefined,
+        width: undefined,
+        height: undefined,
+        stock: undefined
+      });
+      setErrors({});
+      
+      setTimeout(() => {
+        onBackToProducts();
+      }, 1000);
+      
+    } catch (error) {
+      console.error('Error creating product:', error);
+      message.error(error.message || 'Failed to create product. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFieldChange = (field, value) => {
+    setFormValues(prev => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
   };
 
   return (
-    <main className="flex-1 p-8">
-      <div className="max-w-4xl mx-auto">
-        {/* Breadcrumbs */}
-        <div className="flex flex-wrap gap-2 mb-6">
-          <button 
-            onClick={onBackToProducts}
-            className="text-slate-500 dark:text-slate-400 text-sm font-medium leading-normal hover:text-primary"
-          >
-            Dashboard
-          </button>
-          <span className="text-slate-500 dark:text-slate-400 text-sm font-medium leading-normal">/</span>
-          <button 
-            onClick={onBackToProducts}
-            className="text-slate-500 dark:text-slate-400 text-sm font-medium leading-normal hover:text-primary"
-          >
-            Products
-          </button>
-          <span className="text-slate-500 dark:text-slate-400 text-sm font-medium leading-normal">/</span>
-          <span className="text-slate-900 dark:text-white text-sm font-medium leading-normal">Add New</span>
-        </div>
+    <div className="p-8 max-w-5xl mx-auto">
+      {/* Breadcrumbs */}
+      <Breadcrumb 
+        className="mb-6"
+        items={[
+          {
+            title: (
+              <a onClick={onBackToProducts}>
+                <HomeOutlined className="mr-1" />
+                Dashboard
+              </a>
+            ),
+          },
+          {
+            title: (
+              <a onClick={onBackToProducts}>
+                <AppstoreOutlined className="mr-1" />
+                Products
+              </a>
+            ),
+          },
+          {
+            title: 'Add New',
+          },
+        ]}
+      />
 
-        {/* Page Heading */}
-        <div className="flex flex-wrap justify-between gap-3 mb-8">
-          <div className="flex min-w-72 flex-col gap-2">
-            <h1 className="text-slate-900 dark:text-white text-3xl font-bold leading-tight tracking-tight">Create New Product</h1>
-            <p className="text-slate-500 dark:text-slate-400 text-base font-normal leading-normal">Fill in the details below to add a new product to your inventory.</p>
+      {/* Page Heading */}
+      <div className="mb-8">
+        <Title level={2} className="!mb-2">Create New Product</Title>
+        <Text type="secondary" className="text-base">
+          Fill in the details below to add a new product to your inventory.
+        </Text>
+      </div>
+
+      {/* Form Card */}
+      <Card 
+        title={<span className="text-lg font-semibold">Product Details</span>}
+        className="shadow-sm"
+      >
+        <div className="space-y-6">
+          {/* Product Name */}
+          <div>
+            <label className="block mb-2">
+              <Text strong>Product Name <span className="text-red-500">*</span></Text>
+            </label>
+            <Input 
+              size="large"
+              prefix={<TagOutlined />}
+              placeholder="e.g., Premium Cotton T-Shirt"
+              value={formValues.name}
+              onChange={(e) => handleFieldChange('name', e.target.value)}
+              status={errors.name ? 'error' : ''}
+            />
+            {errors.name && <Text type="danger" className="text-sm">{errors.name}</Text>}
           </div>
-        </div>
 
-        {/* Form Card */}
-        <div className="bg-white dark:bg-[#181830] rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
-          {/* Section Header */}
-          <div className="p-6 border-b border-slate-200 dark:border-slate-800">
-            <h3 className="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em]">Product Details</h3>
-          </div>
-
-          {/* Form Fields */}
-          <form onSubmit={handleSubmit} className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Product Name */}
-            <div className="md:col-span-2">
-              <label className="flex flex-col w-full">
-                <p className="text-slate-800 dark:text-slate-200 text-sm font-medium leading-normal pb-2">Product Name</p>
-                <div className="relative flex w-full flex-1 items-center">
-                  <span className="material-symbols-outlined absolute left-4 text-slate-400 dark:text-slate-500">label</span>
-                  <input 
-                    className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-slate-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 focus:border-primary h-12 placeholder:text-slate-400 dark:placeholder:text-slate-500 pl-12 pr-4 text-base font-normal leading-normal" 
-                    placeholder="e.g., Premium Cotton T-Shirt" 
-                    value={formData.name}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
-                    required
-                  />
-                </div>
-              </label>
-            </div>
-
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* SKU */}
             <div>
-              <label className="flex flex-col w-full">
-                <p className="text-slate-800 dark:text-slate-200 text-sm font-medium leading-normal pb-2">SKU (Stock Keeping Unit)</p>
-                <div className="relative flex w-full flex-1 items-center">
-                  <span className="material-symbols-outlined absolute left-4 text-slate-400 dark:text-slate-500">barcode_scanner</span>
-                  <input 
-                    className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-slate-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 focus:border-primary h-12 placeholder:text-slate-400 dark:placeholder:text-slate-500 pl-12 pr-4 text-base font-normal leading-normal" 
-                    placeholder="e.g., PCT-BLK-L" 
-                    value={formData.sku}
-                    onChange={(e) => handleInputChange('sku', e.target.value)}
-                    required
-                  />
-                </div>
+              <label className="block mb-2">
+                <Text strong>SKU (Stock Keeping Unit) <span className="text-red-500">*</span></Text>
               </label>
+              <Input 
+                size="large"
+                prefix={<BarcodeOutlined />}
+                placeholder="e.g., PCT-BLK-L"
+                value={formValues.sku}
+                onChange={(e) => handleFieldChange('sku', e.target.value)}
+                status={errors.sku ? 'error' : ''}
+              />
+              {errors.sku && <Text type="danger" className="text-sm block mt-1">{errors.sku}</Text>}
             </div>
 
             {/* Weight */}
             <div>
-              <label className="flex flex-col w-full">
-                <p className="text-slate-800 dark:text-slate-200 text-sm font-medium leading-normal pb-2">Weight</p>
-                <div className="relative flex w-full flex-1 items-center">
-                  <span className="material-symbols-outlined absolute left-4 text-slate-400 dark:text-slate-500">scale</span>
-                  <input 
-                    className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-slate-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 focus:border-primary h-12 placeholder:text-slate-400 dark:placeholder:text-slate-500 pl-12 pr-4 text-base font-normal leading-normal" 
-                    placeholder="0.00" 
-                    type="number" 
-                    step="0.01"
-                    value={formData.weight}
-                    onChange={(e) => handleInputChange('weight', e.target.value)}
-                    required
-                  />
-                  <span className="absolute right-4 text-sm text-slate-500 dark:text-slate-400">kg</span>
-                </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">Units in kilograms (kg).</p>
+              <label className="block mb-2">
+                <Text strong>Weight (kg) <span className="text-red-500">*</span></Text>
               </label>
+              <InputNumber
+                size="large"
+                // prefix={<ScaleOutlined />}
+                placeholder="0.00"
+                step={0.01}
+                min={0.01}
+                className="w-full"
+                addonAfter="kg"
+                value={formValues.weight}
+                onChange={(value) => handleFieldChange('weight', value)}
+                status={errors.weight ? 'error' : ''}
+              />
+              <Text type="secondary" className="text-xs block mt-1">Units in kilograms (kg)</Text>
+              {errors.weight && <Text type="danger" className="text-sm block">{errors.weight}</Text>}
             </div>
+          </div>
 
-            {/* Dimensions */}
-            <div className="md:col-span-2">
-              <p className="text-slate-800 dark:text-slate-200 text-sm font-medium leading-normal pb-2">Dimensions (cm)</p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <label className="flex flex-col w-full">
-                  <div className="relative flex w-full flex-1 items-center">
-                    <input 
-                      className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-slate-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 focus:border-primary h-12 placeholder:text-slate-400 dark:placeholder:text-slate-500 px-4 text-base font-normal leading-normal" 
-                      placeholder="Length" 
-                      type="number" 
-                      value={formData.length}
-                      onChange={(e) => handleInputChange('length', e.target.value)}
-                      required
-                    />
-                  </div>
-                </label>
-                <label className="flex flex-col w-full">
-                  <div className="relative flex w-full flex-1 items-center">
-                    <input 
-                      className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-slate-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 focus:border-primary h-12 placeholder:text-slate-400 dark:placeholder:text-slate-500 px-4 text-base font-normal leading-normal" 
-                      placeholder="Width" 
-                      type="number" 
-                      value={formData.width}
-                      onChange={(e) => handleInputChange('width', e.target.value)}
-                      required
-                    />
-                  </div>
-                </label>
-                <label className="flex flex-col w-full">
-                  <div className="relative flex w-full flex-1 items-center">
-                    <input 
-                      className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-slate-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 focus:border-primary h-12 placeholder:text-slate-400 dark:placeholder:text-slate-500 px-4 text-base font-normal leading-normal" 
-                      placeholder="Height" 
-                      type="number" 
-                      value={formData.height}
-                      onChange={(e) => handleInputChange('height', e.target.value)}
-                      required
-                    />
-                  </div>
-                </label>
+          {/* Dimensions */}
+          <div>
+            <label className="block mb-2">
+              <Text strong>Dimensions (cm) <span className="text-red-500">*</span></Text>
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <InputNumber
+                  size="large"
+                  placeholder="Length"
+                  min={0.1}
+                  className="w-full"
+                  addonAfter="cm"
+                  value={formValues.length}
+                  onChange={(value) => handleFieldChange('length', value)}
+                  status={errors.length ? 'error' : ''}
+                />
+                {errors.length && <Text type="danger" className="text-sm block mt-1">{errors.length}</Text>}
+              </div>
+
+              <div>
+                <InputNumber
+                  size="large"
+                  placeholder="Width"
+                  min={0.1}
+                  className="w-full"
+                  addonAfter="cm"
+                  value={formValues.width}
+                  onChange={(value) => handleFieldChange('width', value)}
+                  status={errors.width ? 'error' : ''}
+                />
+                {errors.width && <Text type="danger" className="text-sm block mt-1">{errors.width}</Text>}
+              </div>
+
+              <div>
+                <InputNumber
+                  size="large"
+                  placeholder="Height"
+                  min={0.1}
+                  className="w-full"
+                  addonAfter="cm"
+                  value={formValues.height}
+                  onChange={(value) => handleFieldChange('height', value)}
+                  status={errors.height ? 'error' : ''}
+                />
+                {errors.height && <Text type="danger" className="text-sm block mt-1">{errors.height}</Text>}
               </div>
             </div>
+          </div>
 
-            {/* Initial Stock */}
+          {/* Initial Stock */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="flex flex-col w-full">
-                <p className="text-slate-800 dark:text-slate-200 text-sm font-medium leading-normal pb-2">Initial Stock Level</p>
-                <div className="relative flex w-full flex-1 items-center">
-                  <span className="material-symbols-outlined absolute left-4 text-slate-400 dark:text-slate-500">inventory</span>
-                  <input 
-                    className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-slate-900 dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 focus:border-primary h-12 placeholder:text-slate-400 dark:placeholder:text-slate-500 pl-12 pr-4 text-base font-normal leading-normal" 
-                    placeholder="e.g., 100" 
-                    type="number" 
-                    value={formData.stock}
-                    onChange={(e) => handleInputChange('stock', e.target.value)}
-                    required
-                  />
-                </div>
+              <label className="block mb-2">
+                <Text strong>Initial Stock Level <span className="text-red-500">*</span></Text>
               </label>
+              <InputNumber
+                size="large"
+                prefix={<InboxOutlined />}
+                placeholder="e.g., 100"
+                min={0}
+                className="w-full"
+                value={formValues.stock}
+                onChange={(value) => handleFieldChange('stock', value)}
+                status={errors.stock ? 'error' : ''}
+              />
+              {errors.stock && <Text type="danger" className="text-sm block mt-1">{errors.stock}</Text>}
             </div>
+          </div>
 
-            {/* Form Actions */}
-            <div className="md:col-span-2 pt-4 border-t border-slate-200 dark:border-slate-800 flex justify-end items-center gap-4">
-              <button 
-                type="button"
+          {/* Form Actions */}
+          <div className="pt-6 border-t flex justify-end">
+            <Space size="middle">
+              <Button 
+                size="large"
                 onClick={onBackToProducts}
-                className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-11 px-6 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-bold leading-normal tracking-[0.015em] hover:bg-slate-200 dark:hover:bg-slate-700"
               >
-                <span className="truncate">Cancel</span>
-              </button>
-              <button 
-                type="submit"
-                className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-11 px-6 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/90"
+                Cancel
+              </Button>
+              <Button 
+                type="primary" 
+                size="large"
+                loading={loading}
+                icon={loading ? <LoadingOutlined /> : null}
+                onClick={handleSubmit}
               >
-                <span className="truncate">Add Product</span>
-              </button>
-            </div>
-          </form>
+                {loading ? 'Creating...' : 'Add Product'}
+              </Button>
+            </Space>
+          </div>
         </div>
-      </div>
-    </main>
+      </Card>
+    </div>
   );
 };
 

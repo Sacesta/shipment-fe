@@ -1,150 +1,239 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { Table, Input, Button, Pagination, Tag, Space, Card, message } from 'antd';
+import { SearchOutlined, DownloadOutlined, PlusOutlined } from '@ant-design/icons';
+import shipmentService from '../services/shipmentService';
 
 const ShipmentsPage = ({ onCreateShipment, onTrackShipment }) => {
+  const [shipments, setShipments] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0
+  });
+  const [searchText, setSearchText] = useState('');
 
-
-  const shipments = [
-    {
-      awb: '123456789',
-      orderId: 'OD-987654',
-      courier: 'ShipRocket',
-      pickupStatus: 'Pending Pickup',
-      deliveryStatus: 'In Transit',
-      pickupColor: 'bg-[#EFF6FF] text-[#1E40AF]',
-      deliveryColor: 'bg-[#FFFBEB] text-[#B45309]'
-    },
-    {
-      awb: '234567890',
-      orderId: 'OD-876543',
-      courier: 'BlueDart',
-      pickupStatus: 'Scheduled',
-      deliveryStatus: 'Delivered',
-      pickupColor: 'bg-[#EFF6FF] text-[#1E40AF]',
-      deliveryColor: 'bg-[#ECFDF5] text-[#065F46]'
-    },
-    {
-      awb: '345678901',
-      orderId: 'OD-765432',
-      courier: 'Delhivery',
-      pickupStatus: 'Picked Up',
-      deliveryStatus: 'RTO Initiated',
-      pickupColor: 'bg-gray-100 text-gray-800',
-      deliveryColor: 'bg-[#FEF2F2] text-[#991B1B]'
-    },
-    {
-      awb: '456789012',
-      orderId: 'OD-654321',
-      courier: 'Ecom Express',
-      pickupStatus: 'Picked Up',
-      deliveryStatus: 'In Transit',
-      pickupColor: 'bg-gray-100 text-gray-800',
-      deliveryColor: 'bg-[#FFFBEB] text-[#B45309]'
+  // Fetch shipments from API
+  const fetchShipments = async (page = 1, search = '') => {
+    setLoading(true);
+    try {
+      const response = await shipmentService.getShipments(page, pagination.pageSize, search);
+      
+      // Handle the new API response structure
+      if (response.success && response.data) {
+        setShipments(response.data);
+        setPagination(prev => ({
+          ...prev,
+          current: response.pagination?.current || page,
+          total: response.pagination?.total || 0
+        }));
+      } else {
+        setShipments([]);
+        setPagination(prev => ({ ...prev, total: 0 }));
+      }
+    } catch (error) {
+      message.error('Failed to fetch shipments');
+      console.error('Error fetching shipments:', error);
+      setShipments([]);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    fetchShipments();
+  }, []);
+
+  // Handle search
+  const handleSearch = (value) => {
+    setSearchText(value);
+    fetchShipments(1, value);
+  };
+
+  // Handle pagination change
+  const handlePaginationChange = (page) => {
+    fetchShipments(page, searchText);
+  };
+
+  // Handle download label
+  const handleDownloadLabel = async (id) => {
+    try {
+      await shipmentService.downloadLabel(id);
+      message.success('Label downloaded successfully');
+    } catch (error) {
+      message.error('Failed to download label');
+      console.error('Error downloading label:', error);
+    }
+  };
+
+  // Status tag colors
+  const getStatusColor = (status) => {
+    const normalizedStatus = status?.toLowerCase();
+    const statusColors = {
+      'pending': 'blue',
+      'pending pickup': 'blue',
+      'scheduled': 'cyan',
+      'picked up': 'green',
+      'in transit': 'orange',
+      'delivered': 'success',
+      'rto initiated': 'red',
+      'failed': 'error'
+    };
+    return statusColors[normalizedStatus] || 'default';
+  };
+
+  // Format status for display
+  const formatStatus = (status) => {
+    if (!status) return 'N/A';
+    return status.charAt(0).toUpperCase() + status.slice(1);
+  };
+
+  // Table columns configuration
+  const columns = [
+    {
+      title: 'Tracking Number',
+      dataIndex: 'trackingNumber',
+      key: 'trackingNumber',
+      width: 180,
+      render: (text) => <span className="font-mono">{text || 'N/A'}</span>
+    },
+    {
+      title: 'Customer',
+      dataIndex: ['customer', 'name'],
+      key: 'customerName',
+      width: 150,
+    },
+    {
+      title: 'Phone',
+      dataIndex: ['customer', 'phone'],
+      key: 'customerPhone',
+      width: 120,
+    },
+    {
+      title: 'Courier',
+      dataIndex: ['courier', 'service'],
+      key: 'courier',
+      width: 120,
+    },
+    {
+      title: 'Delivery Time',
+      dataIndex: ['courier', 'delivery'],
+      key: 'delivery',
+      width: 150,
+    },
+    {
+      title: 'Status',
+      dataIndex: 'status',
+      key: 'status',
+      render: (status) => (
+        <Tag color={getStatusColor(status)}>
+          {formatStatus(status)}
+        </Tag>
+      ),
+      width: 120,
+    },
+    {
+      title: 'Payment',
+      dataIndex: ['payment', 'mode'],
+      key: 'payment',
+      render: (mode) => (
+        <Tag color={mode === 'prepaid' ? 'green' : 'orange'}>
+          {mode?.toUpperCase()}
+        </Tag>
+      ),
+      width: 100,
+    },
+    {
+      title: 'Cost',
+      dataIndex: ['courier', 'cost'],
+      key: 'cost',
+      render: (cost) => `₹${cost?.toFixed(2) || '0.00'}`,
+      width: 100,
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
+      width: 100,
+      fixed: 'right',
+      render: (_, record) => (
+        <Space>
+          <Button
+            type="text"
+            icon={<DownloadOutlined />}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDownloadLabel(record.id || record._id);
+            }}
+            title="Download Label"
+          />
+        </Space>
+      ),
+    },
   ];
 
   return (
-    <main className="flex-1 p-6 lg:p-10">
-      <div className="max-w-7xl mx-auto">
-        {/* PageHeading */}
-        <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
-          <div className="flex flex-col">
-            <h1 className="text-[#1F2937] dark:text-white text-3xl font-black leading-tight tracking-[-0.03em]">All Shipments</h1>
-            <p className="text-gray-500 dark:text-gray-400 text-base font-normal leading-normal mt-1">Manage, track, and download labels for all your shipments.</p>
-          </div>
-          <button 
-            onClick={onCreateShipment}
-            className="hidden md:flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-gradient-to-r from-[#818cf8] to-[#c084fc] text-white text-sm font-bold leading-normal tracking-[0.015em] hover:opacity-90 transition-opacity"
-          >
-            <span className="truncate">+ Create Shipment</span>
-          </button>
-
+    <div className="p-6">
+      <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
+        <div className="flex flex-col">
+          <h1 className="text-3xl font-bold">All Shipments</h1>
+          <p className="text-gray-500">Manage, track, and download labels for all your shipments.</p>
         </div>
-        
-        {/* Main Container Card */}
-        <div className="bg-white dark:bg-gray-900/50 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-4 sm:p-6">
-          {/* SearchBar */}
-          <div className="pb-4">
-            <label className="flex flex-col min-w-40 h-12 w-full max-w-sm">
-              <div className="flex w-full flex-1 items-stretch rounded-lg h-full">
-                <div className="text-gray-400 dark:text-gray-500 flex bg-gray-100 dark:bg-gray-800 items-center justify-center pl-4 rounded-l-lg border-y border-l border-gray-200 dark:border-gray-700">
-                  <span className="material-symbols-outlined text-xl">search</span>
-                </div>
-                <input 
-                  className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-r-lg text-[#1F2937] dark:text-gray-200 focus:outline-0 focus:ring-2 focus:ring-primary/50 border-y border-r border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 h-full placeholder:text-gray-400 dark:placeholder:text-gray-500 px-4 text-sm font-normal" 
-                  placeholder="Search by AWB, Order ID..." 
-                  value=""
-                />
-              </div>
-            </label>
-          </div>
-          
-          {/* Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-              <thead className="text-xs text-[#1F2937] dark:text-gray-300 uppercase bg-gray-50 dark:bg-gray-800/50">
-                <tr>
-                  <th className="px-6 py-3 font-medium" scope="col">AWB</th>
-                  <th className="px-6 py-3 font-medium" scope="col">Order ID</th>
-                  <th className="px-6 py-3 font-medium" scope="col">Courier</th>
-                  <th className="px-6 py-3 font-medium" scope="col">Pickup Status</th>
-                  <th className="px-6 py-3 font-medium" scope="col">Delivery Status</th>
-                  <th className="px-6 py-3 font-medium text-center" scope="col">Label</th>
-                </tr>
-              </thead>
-              <tbody>
-                {shipments.map((shipment, index) => (
-                  <tr 
-                    key={index} 
-                    className="bg-white dark:bg-transparent border-b dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
-                    onClick={() => onTrackShipment && onTrackShipment(shipment)}
-                  >
-                    <td className="px-6 py-4 font-medium text-gray-900 dark:text-white whitespace-nowrap">{shipment.awb}</td>
-
-                    <td className="px-6 py-4">{shipment.orderId}</td>
-                    <td className="px-6 py-4">{shipment.courier}</td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${shipment.pickupColor}`}>
-                        {shipment.pickupStatus}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${shipment.deliveryColor}`}>
-                        {shipment.deliveryStatus}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <button className="text-gray-500 dark:text-gray-400 hover:text-primary dark:hover:text-white" title="Download Label">
-                        <span className="material-symbols-outlined text-xl">download</span>
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          
-          {/* Pagination */}
-          <div className="flex items-center justify-between pt-4">
-            <span className="text-sm font-normal text-gray-500 dark:text-gray-400">
-              Showing <span className="font-semibold text-gray-900 dark:text-white">1-4</span> of <span className="font-semibold text-gray-900 dark:text-white">100</span>
-            </span>
-            <div className="flex items-center space-x-1">
-              <a className="flex size-8 items-center justify-center rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800" href="#">
-                <span className="material-symbols-outlined text-lg">chevron_left</span>
-              </a>
-              <a className="text-sm font-bold flex size-8 items-center justify-center rounded-md bg-primary/10 text-primary dark:bg-primary/20 dark:text-white" href="#">1</a>
-              <a className="text-sm font-normal flex size-8 items-center justify-center rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800" href="#">2</a>
-              <a className="text-sm font-normal flex size-8 items-center justify-center rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800" href="#">3</a>
-              <span className="text-sm font-normal flex size-8 items-center justify-center text-gray-500 dark:text-gray-400">...</span>
-              <a className="text-sm font-normal flex size-8 items-center justify-center rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800" href="#">10</a>
-              <a className="flex size-8 items-center justify-center rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800" href="#">
-                <span className="material-symbols-outlined text-lg">chevron_right</span>
-              </a>
-            </div>
-          </div>
-        </div>
+        <Button 
+          type="primary" 
+          icon={<PlusOutlined />}
+          onClick={onCreateShipment}
+          className="bg-gradient-to-r from-blue-500 to-purple-500 border-0"
+        >
+          Create Shipment
+        </Button>
       </div>
-    </main>
+
+      <Card>
+        <div className="mb-4 flex justify-between items-center">
+          <Input.Search
+            placeholder="Search by tracking number, customer name..."
+            allowClear
+            enterButton={<SearchOutlined />}
+            size="large"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            onSearch={handleSearch}
+            style={{ width: 400 }}
+          />
+          <div className="text-gray-500">
+            Total Shipments: <span className="font-semibold">{pagination.total}</span>
+          </div>
+        </div>
+
+        <Table
+          columns={columns}
+          dataSource={shipments}
+          rowKey={(record) => record.id || record._id}
+          loading={loading}
+          pagination={false}
+          onRow={(record) => ({
+            onClick: () => onTrackShipment && onTrackShipment(record),
+            style: { cursor: 'pointer' },
+            className: 'hover:bg-gray-50'
+          })}
+          scroll={{ x: 1200 }}
+        />
+
+        <div className="mt-4 flex justify-end">
+          <Pagination
+            current={pagination.current}
+            pageSize={pagination.pageSize}
+            total={pagination.total}
+            onChange={handlePaginationChange}
+            showSizeChanger={false}
+            showQuickJumper
+            showTotal={(total, range) => 
+              `Showing ${range[0]}-${range[1]} of ${total} items`
+            }
+          />
+        </div>
+      </Card>
+    </div>
   );
 };
 
