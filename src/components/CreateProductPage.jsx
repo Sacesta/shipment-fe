@@ -9,18 +9,10 @@ import {
   AppstoreOutlined,
   LoadingOutlined
 } from '@ant-design/icons';
+import productService from '../services/productService';
 
 const { Title, Text } = Typography;
 
-// Mock product service for demo
-const productService = {
-  createProduct: async (data) => {
-    // Simulate API call
-    return new Promise((resolve) => {
-      setTimeout(() => resolve({ success: true }), 1000);
-    });
-  }
-};
 
 const CreateProductPage = ({ onBackToProducts = () => console.log('Back to products') }) => {
   const [formValues, setFormValues] = useState({
